@@ -3,6 +3,7 @@ import "./App.css";
 import { Connection, clusterApiUrl } from "@solana/web3.js";
 import ProgressButton from "./progress_button";
 import Button from "@material-ui/core/Button";
+
 import "./Sol.css";
 
 const web3 = require("@solana/web3.js");
@@ -12,14 +13,12 @@ const getProvider = () => {
   return window.solana;
 };
 
-const NETWORK = clusterApiUrl("mainnet-beta");
-
 export default function SolanaBuyButton(props) {
   const [sending, setSending] = useState(false);
 
   const [provider, setProvider] = useState(getProvider());
 
-  const connection = new Connection(NETWORK);
+  const connection = new Connection(props.network);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {

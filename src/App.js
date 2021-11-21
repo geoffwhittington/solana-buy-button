@@ -7,12 +7,13 @@ function App() {
     <div className="App">
       <SolanaBuyButton
         title="Buy"
+        network="https://api.mainnet-beta.solana.com"
         tokenMint="kinXdEcpDQeHPEuQnqmUgtYykqKGVFq6CeVX5iAHJq6"
-        targetWallet="DqMgcdZ7xrJpzxMRmpdiaPF5o4wmsYE8ZQ3fQBhowpra"
+        targetWallet="CDpMVDNK3RFmeAsgeodJbjxt6m39Es2bMMce6BQCKCSs"
         amount={100}
         decimals={5}
-        onSuccess={(transaction, signed_tx) => {
-          console.log("Success: {} {}", transaction, signed_tx);
+        onSuccess={(transaction) => {
+          console.log("Success: ", transaction);
         }}
         onError={(e) => {
           console.log("Error: ", e);
