@@ -9,9 +9,10 @@ function App() {
         title="Buy"
         tokenMint="kinXdEcpDQeHPEuQnqmUgtYykqKGVFq6CeVX5iAHJq6"
         targetWallet="DqMgcdZ7xrJpzxMRmpdiaPF5o4wmsYE8ZQ3fQBhowpra"
-        amount={10000}
-        onSuccess={(transaction) => {
-          console.log("Success: ", transaction);
+        amount={100}
+        decimals={5}
+        onSuccess={(transaction, signed_tx) => {
+          console.log("Success: {} {}", transaction, signed_tx);
         }}
         onError={(e) => {
           console.log("Error: ", e);

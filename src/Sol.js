@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { Connection, clusterApiUrl, PublicKey } from "@solana/web3.js";
-import { getOwnedTokenAccounts } from "./utils/tokens";
+import { Connection, clusterApiUrl } from "@solana/web3.js";
 import ProgressButton from "./progress_button";
 import Button from "@material-ui/core/Button";
-import { parseTokenAccountData } from "./utils/tokens/data";
 import "./Sol.css";
 
 const web3 = require("@solana/web3.js");
@@ -17,7 +15,6 @@ const getProvider = () => {
 const NETWORK = clusterApiUrl("mainnet-beta");
 
 export default function SolanaBuyButton(props) {
-  const [message, setMessage] = useState();
   const [sending, setSending] = useState(false);
 
   const [provider, setProvider] = useState(getProvider());
@@ -34,7 +31,7 @@ export default function SolanaBuyButton(props) {
         setConnected(false);
       });
       // try to eagerly connect
-      provider.connect({ onlyIfTrusted: true });
+      provider.connect({});
       return () => {
         provider.disconnect();
       };
@@ -43,70 +40,47 @@ export default function SolanaBuyButton(props) {
 
   useEffect(() => {
     // Will either automatically connect to Phantom, or do nothing.
-    if (provider) provider.connect({ onlyIfTrusted: true });
+    if (provider && !provider.connected) provider.connect({});
   }, []);
 
-  async function getTokenAccount(publicKey, mint) {
-    let tokenAccounts = await getOwnedTokenAccounts(connection, publicKey);
-
-    return tokenAccounts
-      .map(({ publicKey, accountInfo }) => {
-        let data = parseTokenAccountData(accountInfo.data);
-        return { publicKey, parsed: data };
-      })
-      .filter(({ parsed }) => parsed.mint.equals(mint))[0];
-  }
   async function doTransferTokens() {
     if (!provider) return;
 
-    const sourceSplTokenAccount = await getTokenAccount(
-      new PublicKey(provider.publicKey.toBase58()),
-      new PublicKey(props.tokenMint)
+    let myToken = await new splToken.Token(
+      connection,
+      new web3.PublicKey(props.tokenMint),
+      splToken.TOKEN_PROGRAM_ID,
+      provider.publicKey.toBase58()
     );
 
-    if (!sourceSplTokenAccount) {
-      console.log("Missing destination token address");
-      return;
-    }
-
-    const destinationSplTokenAccount = await getTokenAccount(
-      new PublicKey(props.targetWallet),
-      new PublicKey(props.tokenMint)
+    var fromTokenAccount = await myToken.getOrCreateAssociatedAccountInfo(
+      provider.publicKey
     );
 
-    if (!destinationSplTokenAccount) {
-      console.log("Missing destination token address");
-      return;
-    }
-
-    var connection = new web3.Connection(web3.clusterApiUrl("mainnet-beta"));
-    console.log("Connection: ", connection);
+    var toTokenAccount = await myToken.getOrCreateAssociatedAccountInfo(
+      new web3.PublicKey(props.targetWallet)
+    );
 
     var transaction = new web3.Transaction().add(
       splToken.Token.createTransferInstruction(
-        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-        sourceSplTokenAccount.publicKey?.toBase58(),
-        destinationSplTokenAccount.publicKey?.toBase58(),
+        splToken.TOKEN_PROGRAM_ID,
+        fromTokenAccount.address,
+        toTokenAccount.address,
         provider.publicKey,
         [],
-        props.amount
+        props.amount * 10 ** props.decimals
       )
     );
-
     // Setting the variables for the transaction
     transaction.feePayer = provider.publicKey;
 
     let blockhashObj = await connection.getRecentBlockhash();
     transaction.recentBlockhash = await blockhashObj.blockhash;
 
-    // Transaction constructor initialized successfully
-    if (transaction) {
-      console.log("Txn created successfully");
-    }
-
     try {
       // Request creator to sign the transaction (allow the transaction)
       let signed = await provider.signTransaction(transaction);
+
       // The signature is generated
       let signature = await connection.sendRawTransaction(signed.serialize());
       // Confirm whether the transaction went through or not
